@@ -8,6 +8,8 @@ namespace fazz.Models.Requests
 		public string? Title { get; set; }
 
         public string? Description { get; set; }
+
+		public int Credit { get; set; }
     }
 }
 
