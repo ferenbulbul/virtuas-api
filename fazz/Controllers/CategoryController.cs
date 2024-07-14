@@ -44,10 +44,10 @@ namespace fazz.Controllers
                 {
                     Title = request.Title,
                     Description = request.Description,
-
+                    Credit = request.Credit
                 };
 
-                var query2 = "INSERT INTO categories (title, description) VALUES (@Title, @Description)";
+                var query2 = "INSERT INTO categories (title, description, credit) VALUES (@Title, @Description, @Credit)";
                 var result = connection.Execute(query2, category);
                 var isCreated = result > 0;
 
@@ -111,7 +111,8 @@ namespace fazz.Controllers
             {
                 Title = request.Title,
                 Description = request.Description,
-                Id = request.Id
+                Id = request.Id,
+                Credit = request.Credit
             };
 
             string connectionString = _config.GetConnectionString("schoolPortal");
@@ -120,7 +121,7 @@ namespace fazz.Controllers
             {
                 connection.Open();
 
-                var query = "UPDATE categories SET Title = @Title, Description = @Description WHERE Id = @Id";
+                var query = "UPDATE categories SET Title = @Title, Description = @Description, Credit=@Credit WHERE Id = @Id";
                 var result = connection.Execute(query, categoryToUpdate);
 
                 if (result > 0)
