@@ -11219,25 +11219,25 @@
     ]
   },
   "packageFolders": {
-    "/Users/erenbulbul/.nuget/packages/": {}
+    "/Users/devdemir/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/erenbulbul/fazz/fazz/fazz.csproj",
+      "projectUniqueName": "/Users/devdemir/Desktop/Projeler/virtuas-api/fazz/fazz.csproj",
       "projectName": "fazz",
-      "projectPath": "/Users/erenbulbul/fazz/fazz/fazz.csproj",
-      "packagesPath": "/Users/erenbulbul/.nuget/packages/",
-      "outputPath": "/Users/erenbulbul/fazz/fazz/obj/",
+      "projectPath": "/Users/devdemir/Desktop/Projeler/virtuas-api/fazz/fazz.csproj",
+      "packagesPath": "/Users/devdemir/.nuget/packages/",
+      "outputPath": "/Users/devdemir/Desktop/Projeler/virtuas-api/fazz/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/erenbulbul/.nuget/NuGet/NuGet.Config"
+        "/Users/devdemir/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net7.0"
       ],
       "sources": {
-        "/usr/local/share/dotnet/sdk/7.0.307/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
+        "/usr/local/share/dotnet/sdk/7.0.317/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -11300,7 +11300,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.307/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.317/RuntimeIdentifierGraph.json"
       }
     }
   }
