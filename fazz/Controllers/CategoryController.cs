@@ -67,8 +67,8 @@ namespace fazz.Controllers
                             connection.Execute(
                                 @"
                         INSERT INTO questions (title, categoryId)
-                        VALUES (@title, @CategoryId);",
-                                new { title = item, categoryId = category_id },
+                        VALUES (@_title, @_categoryId);",
+                                new { _title = item.Title, _categoryId = category_id },
                                 transaction
                             );
                         }
