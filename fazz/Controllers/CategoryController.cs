@@ -10,6 +10,7 @@ using fazz.Models.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
+
 namespace fazz.Controllers
 {
     [Route("api/[controller]/[action]")]
@@ -24,7 +25,7 @@ namespace fazz.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(AddOrUpdateCategoryRequest request)
+        public IActionResult Add(Category request)
         {
             string connectionString = _config.GetConnectionString("schoolPortal");
 
@@ -33,43 +34,10 @@ namespace fazz.Controllers
                 connection.Open();
 
                 var query = "SELECT * FROM categories WHERE title = @Title";
-                var existingCategory = connection.QueryFirstOrDefault<Category>(query, new { Title = request.Title });
-
-                if (existingCategory != null)
-                {
-                    return Conflict(new { Message = "Title already in use" }); // Title zaten kullanılıyorsa 409 döndür
-                }
-
-                var category = new Category
-                {
-                    Title = request.Title,
-                    Description = request.Description,
-                    Credit = request.Credit
-                };
-
-                var query2 = "INSERT INTO categories (title, description, credit) VALUES (@Title, @Description, @Credit)";
-                var result = connection.Execute(query2, category);
-                var isCreated = result > 0;
-
-                if (!isCreated)
-                {
-                    return StatusCode(500, new { Message = " could not be created" }); // Category oluşturulamazsa 500 döndür
-                }
-
-                return Ok(new { Message = "Category created successfully" });
-            }
-        }
-        [HttpPost]
-        public IActionResult AddWithQuestions(AddCategoryWithQuestionsRequest request)
-        {
-            string connectionString = _config.GetConnectionString("schoolPortal");
-
-            using (var connection = new MySqlConnection(connectionString))
-            {
-                connection.Open();
-
-                var query = "SELECT * FROM categories WHERE title = @Title";
-                var existingCategory = connection.QueryFirstOrDefault<Category>(query, new { Title = request.Title });
+                var existingCategory = connection.QueryFirstOrDefault<Category>(
+                    query,
+                    new { Title = request.Title }
+                );
 
                 if (existingCategory != null)
                 {
@@ -80,36 +48,38 @@ namespace fazz.Controllers
                 {
                     Title = request.Title,
                     Description = request.Description,
-                    Credit = request.Credit
+                    Credit = request.Credit,
                 };
-                using (var transaction = connection.BeginTransaction())
+                using var transaction = connection.BeginTransaction();
+                try
                 {
-                    try
-                    {
-                        var category_id = connection.QuerySingle<int>
-                        (@"INSERT INTO categories (title, description, credit) 
+                    var category_id = connection.QuerySingle<int>(
+                        @"INSERT INTO categories (title, description, credit) 
                         VALUES (@Title, @Description, @Credit);                
                         SELECT LAST_INSERT_ID();",
-                        category, transaction);
-                        if (request.Questions != null && request.Questions.Count > 0)
-                        {
-                            foreach (var item in request.Questions)
-                        {
-                            connection.Execute(@"
-                        INSERT INTO questions ( title, categoryId)
-                        VALUES (@title, @CategoryId);",
-                                new { title = item, categoryId = category_id}, transaction);
-                        }
-                        }                        
-                        transaction.Commit();
-                        return Ok(new { Message = "Category created successfully" });
-
-                    }
-                    catch (System.Exception ex)
+                        category,
+                        transaction
+                    );
+                    if (request.Questions != null && request.Questions.Count > 0)
                     {
-                        transaction.Rollback();
-                        return StatusCode(500, new { Message = " could not be created" }); // Category oluşturulamazsa 500 döndür                        
+                        foreach (var item in request.Questions)
+                        {
+                            connection.Execute(
+                                @"
+                        INSERT INTO questions (title, categoryId)
+                        VALUES (@title, @CategoryId);",
+                                new { title = item, categoryId = category_id },
+                                transaction
+                            );
+                        }
                     }
+                    transaction.Commit();
+                    return Ok(new { Message = "Category created successfully" });
+                }
+                catch (System.Exception ex)
+                {
+                    transaction.Rollback();
+                    return StatusCode(500, new { Message = " could not be created" }); // Category oluşturulamazsa 500 döndür
                 }
             }
         }
@@ -118,14 +88,21 @@ namespace fazz.Controllers
         public IActionResult Get()
         {
             string connectionString = _config.GetConnectionString("schoolPortal");
-
+            var response = new List<Category>();
             using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
-
-                var query = "SELECT * FROM categories";
-                var categories = connection.Query<Category>(query);
-                return Ok(categories);
+                var queryForCategories = "SELECT * FROM categories";
+                var categories = connection.Query<Category>(queryForCategories);
+                foreach (var category in categories)
+                {
+                   var queryForQuestions = "SELECT * FROM questions q where "+
+                   "categoryId=@catId";
+                   var questions = connection.Query<Question>(queryForQuestions, new { catId = category.Id });
+                   category.Questions = questions.ToList();
+                   response.Add(category);
+                }
+                return Ok(response);
             }
         }
 
@@ -133,25 +110,28 @@ namespace fazz.Controllers
         public IActionResult GetById(int id)
         {
             string connectionString = _config.GetConnectionString("schoolPortal");
-
+            var response = new Category();
             using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
 
                 var query = "SELECT * FROM categories WHERE Id=@Id ";
-                var category = connection.QueryFirstOrDefault<Category>(query, new { Id = id });
-
+                var category = connection.QueryFirstOrDefault<Category>(query, new { Id = id });                 
                 if (category == null)
                 {
                     return NotFound();
                 }
-                var response = new GetCategoryByIdResponse() { Category = category, IsSuccessful = true };
-
-
+                else
+                {
+                    response = category;
+                    var queryForQuestions = "SELECT * FROM questions q where "+
+                   "categoryId=@catId";
+                    var questions = connection.Query<Question>(queryForQuestions, new { catId = category?.Id }).ToList();
+                    response.Questions = questions;
+                }            
                 return Ok(response);
             }
         }
-
 
         [HttpPost]
         public IActionResult Update(AddOrUpdateCategoryRequest request)
@@ -175,7 +155,8 @@ namespace fazz.Controllers
             {
                 connection.Open();
 
-                var query = "UPDATE categories SET Title = @Title, Description = @Description, Credit=@Credit WHERE Id = @Id";
+                var query =
+                    "UPDATE categories SET Title = @Title, Description = @Description, Credit=@Credit WHERE Id = @Id";
                 var result = connection.Execute(query, categoryToUpdate);
 
                 if (result > 0)
@@ -202,11 +183,20 @@ namespace fazz.Controllers
                 {
                     try
                     {
-                        var deleteQuestionsQuery = "DELETE FROM questions WHERE category_id = @CategoryId";
-                        connection.Execute(deleteQuestionsQuery, new { CategoryId = id }, transaction);
+                        var deleteQuestionsQuery =
+                            "DELETE FROM questions WHERE category_id = @CategoryId";
+                        connection.Execute(
+                            deleteQuestionsQuery,
+                            new { CategoryId = id },
+                            transaction
+                        );
 
                         var deleteCategoryQuery = "DELETE FROM categories WHERE id = @Id";
-                        var result = connection.Execute(deleteCategoryQuery, new { Id = id }, transaction);
+                        var result = connection.Execute(
+                            deleteCategoryQuery,
+                            new { Id = id },
+                            transaction
+                        );
 
                         transaction.Commit();
 
@@ -222,7 +212,10 @@ namespace fazz.Controllers
                     catch
                     {
                         transaction.Rollback();
-                        return StatusCode(500, "An error occurred while deleting the category and its questions.");
+                        return StatusCode(
+                            500,
+                            "An error occurred while deleting the category and its questions."
+                        );
                     }
                 }
             }
@@ -237,14 +230,14 @@ namespace fazz.Controllers
             {
                 connection.Open();
 
-                var query = "select ca.* from fazz.clinics c " +
-                            "join fazz.clinic_categories cm on c.id = cm.clinic_id " +
-                            "join fazz.categories ca on ca.id = cm.category_id " +
-                            "where c.id = @id";
+                var query =
+                    "select ca.* from fazz.clinics c "
+                    + "join fazz.clinic_categories cm on c.id = cm.clinic_id "
+                    + "join fazz.categories ca on ca.id = cm.category_id "
+                    + "where c.id = @id";
                 var categories = connection.Query<Category>(query, new { id = clinicId });
                 return Ok(categories);
             }
         }
-
     }
 }
