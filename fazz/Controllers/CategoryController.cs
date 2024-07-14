@@ -59,7 +59,61 @@ namespace fazz.Controllers
                 return Ok(new { Message = "Category created successfully" });
             }
         }
-               
+        [HttpPost]
+        public IActionResult AddWithQuestions(AddCategoryWithQuestionsRequest request)
+        {
+            string connectionString = _config.GetConnectionString("schoolPortal");
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+
+                var query = "SELECT * FROM categories WHERE title = @Title";
+                var existingCategory = connection.QueryFirstOrDefault<Category>(query, new { Title = request.Title });
+
+                if (existingCategory != null)
+                {
+                    return Conflict(new { Message = "Category already in use" }); // Title zaten kullanılıyorsa 409 döndür
+                }
+
+                var category = new Category
+                {
+                    Title = request.Title,
+                    Description = request.Description,
+                    Credit = request.Credit
+                };
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var category_id = connection.QuerySingle<int>
+                        (@"INSERT INTO categories (title, description, credit) 
+                        VALUES (@Title, @Description, @Credit);                
+                        SELECT LAST_INSERT_ID();",
+                        category, transaction);
+                        if (request.Questions != null && request.Questions.Count > 0)
+                        {
+                            foreach (var item in request.Questions)
+                        {
+                            connection.Execute(@"
+                        INSERT INTO questions ( title, categoryId)
+                        VALUES (@title, @CategoryId);",
+                                new { title = item, categoryId = category_id}, transaction);
+                        }
+                        }                        
+                        transaction.Commit();
+                        return Ok(new { Message = "Category created successfully" });
+
+                    }
+                    catch (System.Exception ex)
+                    {
+                        transaction.Rollback();
+                        return StatusCode(500, new { Message = " could not be created" }); // Category oluşturulamazsa 500 döndür                        
+                    }
+                }
+            }
+        }
+
         [HttpGet]
         public IActionResult Get()
         {
@@ -70,11 +124,11 @@ namespace fazz.Controllers
                 connection.Open();
 
                 var query = "SELECT * FROM categories";
-                var categories = connection.Query<Category>(query);                
+                var categories = connection.Query<Category>(query);
                 return Ok(categories);
             }
         }
-       
+
         [HttpGet]
         public IActionResult GetById(int id)
         {
