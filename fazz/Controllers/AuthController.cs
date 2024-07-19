@@ -9,8 +9,6 @@ using fazz.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace fazz.Controllers
 {
     [Route("api/[controller]/[action]")]
@@ -39,8 +37,8 @@ namespace fazz.Controllers
             {
                 connection.Open();
 
-                var query = "SELECT * FROM users WHERE email = @Email AND password = @Password";
-                var user =  connection.QueryFirstOrDefault<User>(query, new { Email = request.Email, Password = request.Password });
+                var query = "SELECT * FROM users WHERE username = @username AND password = @password";
+                var user =  connection.QueryFirstOrDefault<User>(query, new { username = request.Username, password = request.Password });
 
                 if (user == null)
                 {
