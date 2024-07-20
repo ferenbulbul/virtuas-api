@@ -7,6 +7,8 @@ namespace fazz.Models.Responses
 		public string? Username { get; set; }
 		public int Id { get; set; }
 
+		public int ClinicId { get; set; }
+
 	}
 }
 

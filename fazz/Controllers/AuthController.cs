@@ -32,6 +32,7 @@ namespace fazz.Controllers
         public IActionResult Login(LoginRequest request)
         {
             string connectionString = _config.GetConnectionString("schoolPortal");
+            int clinicId = 0;
 
             using (var connection = new MySqlConnection(connectionString))
             {
@@ -44,8 +45,13 @@ namespace fazz.Controllers
                 {
                     return Unauthorized(new LoginResponse{ IsSuccessful = false, Role = "" }); // Kullanıcı bulunamazsa 401 döndür
                 }
+                if (user.Role == "clinic"){
+                    var query2 = "SELECT id FROM clinics WHERE userId = @userId";
+                    clinicId =  connection.QueryFirstOrDefault<int>(query2, new { userId = user.Id});
+                }
+                
 
-                return Ok(new LoginResponse { IsSuccessful = true, Role = user.Role, Username = user.Name ,Id=user.Id});                
+                return Ok(new LoginResponse { IsSuccessful = true, Role = user.Role, Username = user.Name ,Id=user.Id, ClinicId = clinicId});                
             }
         }
 

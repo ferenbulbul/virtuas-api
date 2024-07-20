@@ -86,7 +86,7 @@ namespace fazz.Controllers
                         int clinicId = connection.QuerySingle<int>(
                             @"
                     INSERT INTO clinics (title, description, address, webaddress,isActive,credit,email,userId)
-                    VALUES (@title, @description, @address, @webAddress,1,0,@email,userId );
+                    VALUES (@title, @description, @address, @webAddress,1,0,@email,@userId );
 
                     SELECT LAST_INSERT_ID();",
                             clinic,
@@ -152,6 +152,20 @@ namespace fazz.Controllers
                 }
 
                 return Ok(clinic);
+            }
+        }
+        [HttpGet]
+        public IActionResult GetCredit(int clinicId)
+        {
+            string connectionString = _config.GetConnectionString("schoolPortal");
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+
+                var query = "SELECT credit FROM clinics WHERE Id=@Id ";
+                var credit = connection.QueryFirstOrDefault<int>(query, new { Id = clinicId });
+                return Ok(credit);
             }
         }
 
