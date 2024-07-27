@@ -46,24 +46,22 @@ namespace fazz.Controllers
                     return Conflict(new { Message = "Clinic already in use" }); // Title zaten kullanılıyorsa 409 döndür
                 }
 
-               
-
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
-                        var username = RandomGenerator.GenerateRandomUsername(); 
+                        var username = RandomGenerator.GenerateRandomUsername();
                         var password = RandomGenerator.GenerateRandomPassword();
-                        var user = new{
+                        var user = new
+                        {
                             name = request.Title,
                             surname = "",
                             email = request.Email,
                             password = password,
                             role = "clinic",
-                            phoneNumber = "",//TODO
-                            username = username    
+                            phoneNumber = "", //TODO
+                            username = username
                         };
-
 
                         int userId = connection.QuerySingle<int>(
                             @"INSERT INTO users (name,surname,email,password,role,phoneNumber,username)
@@ -73,15 +71,15 @@ namespace fazz.Controllers
                             transaction
                         );
 
-                         var clinic = new
-                {
-                    title = request.Title,
-                    description = request.Description,
-                    address = request.Address,
-                    webAddress = request.WebAddress,
-                    email = request.Email,
-                    userId = userId
-                };
+                        var clinic = new
+                        {
+                            title = request.Title,
+                            description = request.Description,
+                            address = request.Address,
+                            webAddress = request.WebAddress,
+                            email = request.Email,
+                            userId = userId
+                        };
 
                         int clinicId = connection.QuerySingle<int>(
                             @"
@@ -103,8 +101,6 @@ namespace fazz.Controllers
                                 transaction
                             );
                         }
-
-
 
                         transaction.Commit();
                         return Ok(new { username, password });
@@ -154,6 +150,7 @@ namespace fazz.Controllers
                 return Ok(clinic);
             }
         }
+
         [HttpGet]
         public IActionResult GetCredit(int clinicId)
         {
@@ -250,6 +247,43 @@ namespace fazz.Controllers
                 else
                 {
                     return NotFound();
+                }
+            }
+        }
+
+        [HttpPut]
+        public IActionResult UpdateCategory([FromBody] List<int> categoryIds, int clinicId)
+        {
+            string connectionString = _config.GetConnectionString("schoolPortal");
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var deleteCategoiresQuery =
+                            "delete from fazz.clinic_categories where clinic_id = @clinicId";
+                        connection.Execute(deleteCategoiresQuery, new { clinicId },transaction);                        
+
+                        foreach (var item in categoryIds)
+                        {
+                            connection.Execute(
+                                @"
+                        INSERT INTO clinic_categories ( clinic_id, category_id)
+                        VALUES (@ClinicId, @CategoryId);",
+                                new { ClinicId = clinicId, CategoryId = item },
+                                transaction
+                            );
+                        }
+                        transaction.Commit();
+                        return Ok();
+                    }
+                    catch (Exception ex) {
+                        transaction.Rollback();
+                        return StatusCode(500,ex.Message);    
+                     }
                 }
             }
         }

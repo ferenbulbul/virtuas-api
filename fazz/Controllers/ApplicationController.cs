@@ -128,7 +128,7 @@ namespace fazz.Controllers
 
 
                 connection.Open();                
-                 var query = "SELECT app.id AS applicationId,    app.userId AS userId,    ca.title AS categoryTitle,    ca.credit AS cost,    u.name AS userName,    u.surname AS userSurname FROM     applications app     JOIN users u ON u.id = app.userId     JOIN categories ca ON ca.id = app.categoryId     LEFT JOIN offers o ON o.applicationId = app.id AND o.clinicId = 72 WHERE     app.categoryId IN (        SELECT cl_ca.category_id        FROM clinic_categories cl_ca         WHERE cl_ca.clinic_id = 72    )    AND o.applicationId IS NULL;";
+                 var query = "SELECT app.id AS applicationId,    app.userId AS userId,    ca.title AS categoryTitle,    ca.credit AS cost,    u.name AS userName,    u.surname AS userSurname FROM     applications app     JOIN users u ON u.id = app.userId     JOIN categories ca ON ca.id = app.categoryId     LEFT JOIN offers o ON o.applicationId = app.id AND o.clinicId = @clinicId WHERE     app.categoryId IN (        SELECT cl_ca.category_id        FROM clinic_categories cl_ca         WHERE cl_ca.clinic_id = @clinicId    )    AND o.applicationId IS NULL;";
 
                 var response = connection.Query<PossibleClientPreData>(query, new { clinicId = clinicId});
                             
