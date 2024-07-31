@@ -234,6 +234,7 @@ namespace fazz.Controllers
             using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
+                //
 
                 var deleteClinicsQuery = "update clinics set credit = @credit where id = @id";
                 var result = connection.Execute(
