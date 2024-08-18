@@ -9,6 +9,8 @@ namespace fazz.Models.Entities
         public string CategoryTitle { get; set; }
         public  string CategoryDescription { get; set; }
         public List<AnswerAndQuestion> Answers { get; set; }
+        public int OfferCount { get; set; }
+        public List<string> OfferedClinics { get; set; }
     }
 }
 

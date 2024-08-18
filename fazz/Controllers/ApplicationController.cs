@@ -107,6 +107,16 @@ namespace fazz.Controllers
 
                     appModel.Answers = answersFetched;
 
+                    var query3 = "select count(*) from offers where applicationId = @applicationId";
+                    var response3 = connection.QuerySingle<int>(query3, new { applicationId = item.ApplicationId });
+
+                    appModel.OfferCount = response3;
+
+                    var queery4 = "select c.title from fazz.offers o left join fazz.clinics c on c.id = o.clinicId where o.applicationId = @applicationId";
+                    var response4 = connection.Query<string>(queery4, new { applicationId = item.ApplicationId });
+
+                    appModel.OfferedClinics = (List<string>)response4;
+
                     res.ApplicationDetails.Add(appModel);
                 }
 
