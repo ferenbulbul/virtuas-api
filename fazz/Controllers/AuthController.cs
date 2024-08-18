@@ -9,8 +9,6 @@ using fazz.Models.Responses;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace fazz.Controllers
 {
     [Route("api/[controller]/[action]")]
@@ -34,20 +32,26 @@ namespace fazz.Controllers
         public IActionResult Login(LoginRequest request)
         {
             string connectionString = _config.GetConnectionString("schoolPortal");
+            int clinicId = 0;
 
             using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
 
-                var query = "SELECT * FROM users WHERE email = @Email AND password = @Password";
-                var user =  connection.QueryFirstOrDefault<User>(query, new { Email = request.Email, Password = request.Password });
+                var query = "SELECT * FROM users WHERE username = @username AND password = @password";
+                var user =  connection.QueryFirstOrDefault<User>(query, new { username = request.Username, password = request.Password });
 
                 if (user == null)
                 {
                     return Unauthorized(new LoginResponse{ IsSuccessful = false, Role = "" }); // Kullanıcı bulunamazsa 401 döndür
                 }
+                if (user.Role == "clinic"){
+                    var query2 = "SELECT id FROM clinics WHERE userId = @userId";
+                    clinicId =  connection.QueryFirstOrDefault<int>(query2, new { userId = user.Id});
+                }
+                
 
-                return Ok(new LoginResponse { IsSuccessful = true, Role = user.Role, Username = user.Name ,Id=user.Id});                
+                return Ok(new LoginResponse { IsSuccessful = true, Role = user.Role, Username = user.Name ,Id=user.Id, ClinicId = clinicId});                
             }
         }
 

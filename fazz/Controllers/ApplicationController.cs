@@ -107,6 +107,16 @@ namespace fazz.Controllers
 
                     appModel.Answers = answersFetched;
 
+                    var query3 = "select count(*) from offers where applicationId = @applicationId";
+                    var response3 = connection.QuerySingle<int>(query3, new { applicationId = item.ApplicationId });
+
+                    appModel.OfferCount = response3;
+
+                    var queery4 = "select c.title from fazz.offers o left join fazz.clinics c on c.id = o.clinicId where o.applicationId = @applicationId";
+                    var response4 = connection.Query<string>(queery4, new { applicationId = item.ApplicationId });
+
+                    appModel.OfferedClinics = (List<string>)response4;
+
                     res.ApplicationDetails.Add(appModel);
                 }
 
@@ -127,19 +137,17 @@ namespace fazz.Controllers
                 var applications = new List<PossibleClientPreData>();
 
 
-                connection.Open();
+                connection.Open();                
+                 var query = "SELECT app.id AS applicationId,    app.userId AS userId,    ca.title AS categoryTitle,    ca.credit AS cost,    u.name AS userName,    u.surname AS userSurname FROM     applications app     JOIN users u ON u.id = app.userId     JOIN categories ca ON ca.id = app.categoryId     LEFT JOIN offers o ON o.applicationId = app.id AND o.clinicId = @clinicId WHERE     app.categoryId IN (        SELECT cl_ca.category_id        FROM clinic_categories cl_ca         WHERE cl_ca.clinic_id = @clinicId    )    AND o.applicationId IS NULL;";
 
-                var query = "select app.id as applicationId,app.userId as userId,ca.title as categoryTitle,u.name as userName,u.surname as userSurname from applications app join users u on u.id=app.userId join categories ca on ca.id=app.categoryId where app.categoryId in (select cl_ca.category_id from clinic_categories cl_ca where cl_ca.clinic_id=@clinicId)";
                 var response = connection.Query<PossibleClientPreData>(query, new { clinicId = clinicId});
-
+                            
                 applications = response.ToList();
 
                 foreach (var item in applications)
                 {
                     var answers = new List<AnswerAndQuestion>();
-
-
-
+                    
                     var query2 = "select ans.title as AnswerTitle ,q.title as QuestionTitle from answers ans join questions q on ans.question_id=q.id where ans.application_id=@app_id";
 
                     var response2 = connection.Query<AnswerAndQuestion>(query2, new { app_id = item.ApplicationId });

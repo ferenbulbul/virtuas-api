@@ -7,6 +7,7 @@ namespace fazz.Models.Entities
         public string? Title { get; set; }
         public string? Description { get; set; }
         public int Credit { get; set; }
+        public bool IsActive { get; set; }
         public List<Question> Questions { get; set; }
     }
 }

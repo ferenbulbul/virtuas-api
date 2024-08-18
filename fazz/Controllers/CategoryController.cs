@@ -49,13 +49,14 @@ namespace fazz.Controllers
                     Title = request.Title,
                     Description = request.Description,
                     Credit = request.Credit,
+                    IsActive = true
                 };
                 using var transaction = connection.BeginTransaction();
                 try
                 {
                     var category_id = connection.QuerySingle<int>(
-                        @"INSERT INTO categories (title, description, credit) 
-                        VALUES (@Title, @Description, @Credit);                
+                        @"INSERT INTO categories (title, description, credit,isActive) 
+                        VALUES (@Title, @Description, @Credit, @IsActive);                
                         SELECT LAST_INSERT_ID();",
                         category,
                         transaction
@@ -66,9 +67,9 @@ namespace fazz.Controllers
                         {
                             connection.Execute(
                                 @"
-                        INSERT INTO questions (title, categoryId)
-                        VALUES (@_title, @_categoryId);",
-                                new { _title = item.Title, _categoryId = category_id },
+                        INSERT INTO questions (title, categoryId, isActive)
+                        VALUES (@_title, @_categoryId, @isActive);",
+                                new { _title = item.Title, _categoryId = category_id, isActive = true },
                                 transaction
                             );
                         }
@@ -92,12 +93,12 @@ namespace fazz.Controllers
             using (var connection = new MySqlConnection(connectionString))
             {
                 connection.Open();
-                var queryForCategories = "SELECT * FROM categories";
+                var queryForCategories = "SELECT * FROM categories where isActive = 1";
                 var categories = connection.Query<Category>(queryForCategories);
                 foreach (var category in categories)
                 {
                    var queryForQuestions = "SELECT * FROM questions q where "+
-                   "categoryId=@catId";
+                   "categoryId=@catId and q.isActive = 1";
                    var questions = connection.Query<Question>(queryForQuestions, new { catId = category.Id });
                    category.Questions = questions.ToList();
                    response.Add(category);
@@ -115,7 +116,7 @@ namespace fazz.Controllers
             {
                 connection.Open();
 
-                var query = "SELECT * FROM categories WHERE Id=@Id ";
+                var query = "SELECT * FROM categories WHERE Id=@Id  ";
                 var category = connection.QueryFirstOrDefault<Category>(query, new { Id = id });                 
                 if (category == null)
                 {
@@ -183,15 +184,15 @@ namespace fazz.Controllers
                 {
                     try
                     {
-                        var deleteQuestionsQuery =
-                            "DELETE FROM questions WHERE category_id = @CategoryId";
+                        var deleteQuestionsQuery =                            
+                             "UPDATE questions SET isActive = 0 WHERE category_id = @CategoryId";
                         connection.Execute(
                             deleteQuestionsQuery,
                             new { CategoryId = id },
                             transaction
                         );
 
-                        var deleteCategoryQuery = "DELETE FROM categories WHERE id = @Id";
+                        var deleteCategoryQuery = "UPDATE categories SET isActive = 0 WHERE id = @Id";
                         var result = connection.Execute(
                             deleteCategoryQuery,
                             new { Id = id },
